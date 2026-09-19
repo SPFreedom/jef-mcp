@@ -3,7 +3,7 @@
   "name": "lol.typosafe/jef",
   "title": "TypoSafe AI — Jef",
   "description": "Jef decides. Give it options, it returns one with a confidence, never a sentence. A parody.",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "websiteUrl": "https://typosafe.lol",
   "remotes": [
     {
@@ -14,5 +14,15 @@
   "repository": {
     "url": "https://github.com/SPFreedom/jef-mcp",
     "source": "github"
-  }
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "jef-mcp",
+      "version": "0.4.7",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
 }
