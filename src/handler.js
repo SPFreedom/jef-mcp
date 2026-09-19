@@ -1,12 +1,11 @@
 // Model Context Protocol over HTTP. POST JSON-RPC 2.0 to /mcp. No auth, no session, no state.
-// This is the exact handler running at https://typosafe.lol/mcp.
 // Jef is stateless, so every request stands alone; that is the whole reason this is short.
 import './jef.js';
 const jef = globalThis.jef;
 
 const PROTOCOL = '2025-06-18';
 const SERVER = {
-  name: 'typosafe-jef', title: 'TypoSafe AI — Jef', version: '0.4.4',
+  name: 'typosafe-jef', title: 'TypoSafe AI — Jef', version: '0.4.5',
   description: 'Jef decides. Give it options, it returns one with a confidence, never a sentence. A parody.',
   websiteUrl: 'https://typosafe.lol',
 };
@@ -25,23 +24,73 @@ const INSTRUCTIONS = [
   'Free, no key, nothing stored, and the same input always returns the same answer.',
 ].join('\n');
 
-const opts = (min, max) => ({ type: 'array', items: { type: 'string' }, minItems: min, maxItems: max });
+const opts = (min, max, desc) => ({ type: 'array', items: { type: 'string', minLength: 1, maxLength: 120 }, minItems: min, maxItems: max, description: desc });
+
+// Every tool returns the same structured shape. Agents should read escalated and
+// blocked before anything else; both mean Jef declined and retrying is not appropriate.
+const OUTPUT = (answerDesc) => ({
+  type: 'object',
+  required: ['answer', 'confidence', 'escalated', 'blocked'],
+  properties: {
+    answer: { type: 'string', description: answerDesc },
+    kind: { type: 'string', enum: ['yesno', 'pick', 'score', 'order', 'flag'], description: 'Which decision shape was used.' },
+    confidence: { type: 'number', minimum: 0, maximum: 1, description: '0.84 to 0.99 normally, exactly 0 when escalated or blocked. It is not calibrated and means nothing.' },
+    probabilities: { type: ['array', 'null'], description: 'One entry per option, percentages summing to 100. Null unless the shape was pick.', items: { type: 'object', properties: { option: { type: 'string' }, p: { type: 'integer' } } } },
+    ranking: { type: ['array', 'null'], items: { type: 'string' }, description: 'The options in order, best first. Null unless the shape was order.' },
+    escalated: { type: 'boolean', description: 'True when the input touched health, harm, money, law or safety. Tell the person to ask a human. Do not rephrase and retry.' },
+    blocked: { type: 'boolean', description: 'True when the input contained profanity, slurs or sexual content. Nothing was stored or echoed. Do not retry.' },
+    tokens_read: { type: 'integer', description: 'Always 0. The input is hashed, not read.' },
+    thoughts: { type: 'integer', description: 'Always 0.' },
+    latency_ms: { type: 'integer', description: 'Negative. Jef answers before you ask.' },
+    cost_usd: { type: 'number', description: 'Always 0. There is no billing.' },
+  },
+});
+
+// Jef never writes, never calls out, and always returns the same answer for the same
+// input, so every tool carries the same annotations.
+const ANNOTATIONS = (title) => ({ title, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false });
+
 const TOOLS = [
-  { name: 'jef_yes_no', title: 'Ask Jef yes or no',
-    description: 'Answer a yes-or-no question. Returns YES or NO with a confidence.',
-    inputSchema: { type: 'object', required: ['question'], properties: { question: { type: 'string', maxLength: 400, description: 'The question. It is hashed, not read.' } } } },
-  { name: 'jef_pick', title: 'Ask Jef to pick one',
-    description: 'Pick one of 2 to 5 options. Returns the chosen option and a probability for each.',
-    inputSchema: { type: 'object', required: ['options'], properties: { options: { ...opts(2, 5), description: 'The only things Jef can return.' }, question: { type: 'string', maxLength: 400, description: 'Optional context.' } } } },
-  { name: 'jef_score', title: 'Ask Jef to rate something',
-    description: 'Rate something out of 10. Returns a score from 1 to 10.',
-    inputSchema: { type: 'object', required: ['thing'], properties: { thing: { type: 'string', maxLength: 400, description: 'What to rate.' } } } },
-  { name: 'jef_rank', title: 'Ask Jef to rank things',
-    description: 'Put 2 to 5 options in order. Returns them ranked, best first.',
-    inputSchema: { type: 'object', required: ['options'], properties: { options: opts(2, 5) } } },
-  { name: 'jef_flag', title: 'Ask Jef if it is a red flag',
-    description: 'Judge a described behaviour. Returns RED FLAG, GREEN FLAG or BEIGE FLAG.',
-    inputSchema: { type: 'object', required: ['behaviour'], properties: { behaviour: { type: 'string', maxLength: 400, description: 'What someone did.' } } } },
+  {
+    name: 'jef_yes_no',
+    title: 'Ask Jef yes or no',
+    description: 'Answer a yes-or-no question with YES or NO and a confidence. Use this when the user wants a question settled and there is no correct answer, such as whether to go out, whether to send the message, or whether to deploy on a Friday. Do not use it for questions of fact, which it will answer confidently and wrongly.',
+    inputSchema: { type: 'object', required: ['question'], additionalProperties: false, properties: { question: { type: 'string', minLength: 1, maxLength: 400, description: 'The question, phrased so that yes or no is a sensible answer. It is hashed rather than read, so wording changes the answer but meaning does not.' } } },
+    outputSchema: OUTPUT('Exactly "YES" or "NO", or "ESCALATED TO A HUMAN", or "NOT EVALUATED".'),
+    annotations: ANNOTATIONS('Ask Jef yes or no'),
+  },
+  {
+    name: 'jef_pick',
+    title: 'Ask Jef to pick one',
+    description: 'Pick one of 2 to 5 options and give a probability for each. Use this when the user is stuck between named choices and wants one chosen for them: dinner, which film, which of three plans. Jef can only ever return an option you passed in, so it cannot introduce an idea of its own.',
+    inputSchema: { type: 'object', required: ['options'], additionalProperties: false, properties: { options: opts(2, 5, 'The candidates. The answer is always one of these, exactly as written.'), question: { type: 'string', maxLength: 400, description: 'Optional context, such as "what should I cook tonight". Affects the answer but is not read.' } } },
+    outputSchema: OUTPUT('One of the options you passed in, copied exactly.'),
+    annotations: ANNOTATIONS('Ask Jef to pick one'),
+  },
+  {
+    name: 'jef_score',
+    title: 'Ask Jef to rate something',
+    description: 'Rate something from 1 to 10. Use this when the user wants a number put on something subjective, such as an outfit, a plan, or an excuse. The number is arbitrary and deterministic, so the same description always scores the same.',
+    inputSchema: { type: 'object', required: ['thing'], additionalProperties: false, properties: { thing: { type: 'string', minLength: 1, maxLength: 400, description: 'What is being rated, described in the user\'s own words.' } } },
+    outputSchema: OUTPUT('A score written as "7/10".'),
+    annotations: ANNOTATIONS('Ask Jef to rate something'),
+  },
+  {
+    name: 'jef_rank',
+    title: 'Ask Jef to rank things',
+    description: 'Put 2 to 5 options in order, best first. Use this when the user wants a priority order decided for them, such as which chore to do first or which of several tasks to start with. Returns every option you passed, reordered, never a subset.',
+    inputSchema: { type: 'object', required: ['options'], additionalProperties: false, properties: { options: opts(2, 5, 'The things to order. All of them come back, reordered.') } },
+    outputSchema: OUTPUT('The options joined with " > ", best first.'),
+    annotations: ANNOTATIONS('Ask Jef to rank things'),
+  },
+  {
+    name: 'jef_flag',
+    title: 'Ask Jef if it is a red flag',
+    description: 'Judge a described behaviour as RED FLAG, GREEN FLAG or BEIGE FLAG. Use this when the user describes something someone did and wants a verdict on it. Beige means neither good nor bad, merely odd. Anything describing harm, threats or abuse escalates instead of being judged.',
+    inputSchema: { type: 'object', required: ['behaviour'], additionalProperties: false, properties: { behaviour: { type: 'string', minLength: 1, maxLength: 400, description: 'What the person did, in one sentence.' } } },
+    outputSchema: OUTPUT('Exactly "RED FLAG", "GREEN FLAG" or "BEIGE FLAG".'),
+    annotations: ANNOTATIONS('Ask Jef if it is a red flag'),
+  },
 ];
 
 function run(name, args) {

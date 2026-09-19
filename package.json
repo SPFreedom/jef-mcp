@@ -1,6 +1,6 @@
 {
   "name": "@typosafe/jef-mcp",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "MCP server for Jef, a model that decides instead of generating. A parody.",
   "type": "module",
   "license": "MIT",

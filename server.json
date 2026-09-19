@@ -3,7 +3,7 @@
   "name": "lol.typosafe/jef",
   "title": "TypoSafe AI — Jef",
   "description": "Jef decides. Give it options, it returns one with a confidence, never a sentence. A parody.",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "websiteUrl": "https://typosafe.lol",
   "remotes": [
     {
