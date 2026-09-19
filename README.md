@@ -69,12 +69,6 @@ confident arbitrary choice, which is what the user asked for, and never as advic
 ## Run it yourself
 
 ```bash
-npx @typosafe/jef-mcp          # MCP over stdio, what most clients spawn
-```
-
-Or from source:
-
-```bash
 git clone https://github.com/SPFreedom/jef-mcp.git
 cd jef-mcp
 node src/stdio.js              # stdio transport
@@ -87,10 +81,13 @@ As a local stdio server in a client config:
 ```json
 {
   "mcpServers": {
-    "jef": { "command": "npx", "args": ["-y", "@typosafe/jef-mcp"] }
+    "jef": { "command": "node", "args": ["/path/to/jef-mcp/src/stdio.js"] }
   }
 }
 ```
+
+There is no npm package for this yet, so the hosted URL above is the easy path and
+this is the offline one.
 
 Zero dependencies. `src/jef.js` is the whole model, and `src/handler.js` is the exact
 handler running at typosafe.lol/mcp.
