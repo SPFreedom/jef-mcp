@@ -1,6 +1,6 @@
 {
   "name": "jef-mcp",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "MCP server for Jef, a model that decides instead of generating. A parody.",
   "type": "module",
   "license": "MIT",
@@ -35,5 +35,6 @@
   "engines": {
     "node": ">=18"
   },
-  "main": "src/stdio.js"
+  "main": "src/stdio.js",
+  "mcpName": "lol.typosafe/jef"
 }
