@@ -108,6 +108,16 @@ part of MCP it implements better than most.
 Related: [`npx typosafe`](https://www.npmjs.com/package/typosafe) is the same model on the
 command line, where the exit code is the decision.
 
+## Docker
+
+```bash
+docker build -t jef-mcp .
+docker run -i --rm jef-mcp        # stdio, nothing exposed
+```
+
+The build runs the test suite, so a broken image cannot be produced. Nothing is
+installed, because there is nothing to install.
+
 ## License
 
 MIT. The model is 331 lines. Read it.
