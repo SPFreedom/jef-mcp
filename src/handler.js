@@ -151,11 +151,14 @@ export function dispatch(msg) {
 
 export default async function handler(req, res) {
   res.setHeader('access-control-allow-origin', '*');
-  res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
+  res.setHeader('access-control-allow-methods', 'GET, HEAD, POST, OPTIONS');
   res.setHeader('access-control-allow-headers', 'content-type, mcp-protocol-version, mcp-session-id, accept');
   res.setHeader('access-control-expose-headers', 'mcp-protocol-version');
   res.setHeader('mcp-protocol-version', PROTOCOL);
   if (req.method === 'OPTIONS') return res.status(204).end();
+
+  // Liveness checkers send HEAD. Answer it, or they record the server as down.
+  if (req.method === 'HEAD') return res.status(200).end();
 
   // A GET is a person or a crawler, not a client. Tell them what this is.
   if (req.method === 'GET') {
