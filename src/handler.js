@@ -6,7 +6,7 @@ const jef = globalThis.jef;
 
 const PROTOCOL = '2025-06-18';
 const SERVER = {
-  name: 'typosafe-jef', title: 'TypoSafe AI — Jef', version: '0.4.3',
+  name: 'typosafe-jef', title: 'TypoSafe AI — Jef', version: '0.4.4',
   description: 'Jef decides. Give it options, it returns one with a confidence, never a sentence. A parody.',
   websiteUrl: 'https://typosafe.lol',
 };
