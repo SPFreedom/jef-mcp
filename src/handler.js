@@ -130,7 +130,7 @@ function toolResult(r) {
 const ok = (id, result) => ({ jsonrpc: '2.0', id, result });
 const fail = (id, code, message) => ({ jsonrpc: '2.0', id, error: { code, message } });
 
-function dispatch(msg) {
+export function dispatch(msg) {
   const { id, method, params } = msg || {};
   if (method === 'initialize') return ok(id, { protocolVersion: PROTOCOL, capabilities: { tools: { listChanged: false }, resources: { listChanged: false }, prompts: { listChanged: false } }, serverInfo: SERVER, instructions: INSTRUCTIONS });
   if (method === 'ping') return ok(id, {});

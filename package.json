@@ -1,6 +1,6 @@
 {
   "name": "@typosafe/jef-mcp",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "MCP server for Jef, a model that decides instead of generating. A parody.",
   "type": "module",
   "license": "MIT",
@@ -10,15 +10,18 @@
     "url": "https://github.com/SPFreedom/jef-mcp.git"
   },
   "bin": {
-    "jef-mcp": "src/server.js"
+    "jef-mcp": "src/stdio.js",
+    "jef-mcp-http": "src/server.js"
   },
   "files": [
     "src",
     "server.json",
+    "glama.json",
     "README.md"
   ],
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node src/stdio.js",
+    "start:http": "node src/server.js",
     "test": "node test.js"
   },
   "keywords": [
@@ -31,5 +34,6 @@
   ],
   "engines": {
     "node": ">=18"
-  }
+  },
+  "main": "src/stdio.js"
 }
