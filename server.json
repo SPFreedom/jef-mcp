@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "lol.typosafe/jef",
+  "title": "TypoSafe AI — Jef",
+  "description": "Jef decides. Give it options, it returns one with a confidence, never a sentence. A parody.",
+  "version": "0.4.3",
+  "websiteUrl": "https://typosafe.lol",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://typosafe.lol/mcp"
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/SPFreedom/jef-mcp",
+    "source": "github"
+  }
+}
